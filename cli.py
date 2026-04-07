@@ -1435,6 +1435,7 @@ class HermesCLI:
         self._secret_state = None
         self._secret_deadline = 0
         self._spinner_text: str = ""  # thinking spinner text for TUI
+        self._spinner_start: float = 0  # timestamp when spinner started
         self._command_running = False
         self._command_status = ""
         self._attached_images: list[Path] = []
@@ -1772,6 +1773,8 @@ class HermesCLI:
         if not text:
             self._flush_reasoning_preview(force=True)
         self._spinner_text = text or ""
+        if text:
+            self._spinner_start = time.time()
         self._invalidate()
 
     # ── Streaming display ────────────────────────────────────────────────
@@ -5553,6 +5556,7 @@ class HermesCLI:
             if _pl > 0 and len(label) > _pl:
                 label = label[:_pl - 3] + "..."
             self._spinner_text = f"{emoji} {label}"
+            self._spinner_start = time.time()
             self._invalidate()
 
         if not self._voice_mode:
@@ -7691,7 +7695,13 @@ class HermesCLI:
             txt = cli_ref._spinner_text
             if not txt:
                 return []
-            return [('class:hint', f'  {txt}')]
+            if cli_ref._spinner_start:
+                _el = time.time() - cli_ref._spinner_start
+                _m, _s = divmod(int(_el), 60)
+                _ts = f" ({_m}:{_s:02d})" if _m else f" ({_s}s)"
+            else:
+                _ts = ""
+            return [('class:hint', f'  {txt}{_ts}')]
 
         def get_spinner_height():
             return 1 if cli_ref._spinner_text else 0
@@ -8096,9 +8106,9 @@ class HermesCLI:
                 if not self._app:
                     _time.sleep(0.1)
                     continue
-                if self._command_running:
-                    self._invalidate(min_interval=0.1)
-                    _time.sleep(0.1)
+                if self._command_running or self._spinner_text:
+                    self._invalidate(min_interval=0.5)
+                    _time.sleep(0.5)
                 else:
                     now = _time.monotonic()
                     if now - last_idle_refresh >= 1.0:

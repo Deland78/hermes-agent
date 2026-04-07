@@ -656,11 +656,13 @@ class KawaiiSpinner:
                 continue
             frame = self.spinner_frames[self.frame_idx % len(self.spinner_frames)]
             elapsed = time.time() - self.start_time
+            mins, secs = divmod(int(elapsed), 60)
+            elapsed_str = f"{mins}:{secs:02d}" if mins else f"{secs}s"
             if wings:
                 left, right = wings[self.frame_idx % len(wings)]
-                line = f"  {left} {frame} {self.message} {right} ({elapsed:.1f}s)"
+                line = f"  {left} {frame} {self.message} {right} ({elapsed_str})"
             else:
-                line = f"  {frame} {self.message} ({elapsed:.1f}s)"
+                line = f"  {frame} {self.message} ({elapsed_str})"
             pad = max(self.last_line_len - len(line), 0)
             self._write(f"\r{line}{' ' * pad}", end='', flush=True)
             self.last_line_len = len(line)
@@ -708,7 +710,12 @@ class KawaiiSpinner:
             blanks = ' ' * max(self.last_line_len + 5, 40)
             self._write(f"\r{blanks}\r", end='', flush=True)
         if final_message:
-            elapsed = f" ({time.time() - self.start_time:.1f}s)" if self.start_time else ""
+            if self.start_time:
+                _el = time.time() - self.start_time
+                _m, _s = divmod(int(_el), 60)
+                elapsed = f" ({_m}:{_s:02d})" if _m else f" ({_s}s)"
+            else:
+                elapsed = ""
             if is_tty:
                 self._write(f"  {final_message}", flush=True)
             else:
