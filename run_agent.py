@@ -4967,14 +4967,35 @@ class AIAgent:
                     fb_context_length * self.context_compressor.threshold_percent
                 )
 
-            self._emit_status(
+            fallback_msg = (
                 f"🔄 Primary model failed — switching to fallback: "
                 f"{fb_model} via {fb_provider}"
             )
+            self._emit_status(fallback_msg)
             logging.info(
                 "Fallback activated: %s → %s (%s)",
                 old_model, fb_model, fb_provider,
             )
+
+            # Notify via Telegram (best-effort, non-blocking)
+            try:
+                from tools.send_message_tool import send_message_tool
+                import threading
+                notify_msg = (
+                    f"⚠️ Hermes fallback activated\n"
+                    f"Primary: {old_model}\n"
+                    f"Fallback: {fb_model} ({fb_provider})\n"
+                    f"Session: {self.session_id}"
+                )
+                threading.Thread(
+                    target=send_message_tool,
+                    args=({"platform": "telegram", "message": notify_msg},),
+                    daemon=True,
+                    name="fallback-notify",
+                ).start()
+            except Exception:
+                pass  # Telegram may not be configured
+
             return True
         except Exception as e:
             logging.error("Failed to activate fallback %s: %s", fb_model, e)
