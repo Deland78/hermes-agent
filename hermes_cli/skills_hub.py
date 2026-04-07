@@ -288,9 +288,9 @@ def do_browse(page: int = 1, page_size: int = 20, source: str = "all",
     # Navigation hints
     nav_parts = []
     if page > 1:
-        nav_parts.append(f"[cyan]--page {page - 1}[/] ← prev")
+        nav_parts.append(f"[cyan]/skills browse --page {page - 1}[/] ← prev")
     if page < total_pages:
-        nav_parts.append(f"[cyan]--page {page + 1}[/] → next")
+        nav_parts.append(f"[cyan]/skills browse --page {page + 1}[/] → next")
 
     if nav_parts:
         c.print(f"  {' | '.join(nav_parts)}")
