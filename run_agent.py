@@ -1112,12 +1112,18 @@ class AIAgent:
                 self._memory_manager = None
 
         # Inject memory provider tool schemas into the tool surface
+        # Skip tools already present (e.g. pip-installed memory plugin
+        # registered the same tools via ctx.register_tool()).
         if self._memory_manager and self.tools is not None:
+            _existing_tool_names = {t.get("function", {}).get("name", "") for t in self.tools}
             for _schema in self._memory_manager.get_all_tool_schemas():
+                _tname = _schema.get("name", "")
+                if _tname and _tname in _existing_tool_names:
+                    continue
                 _wrapped = {"type": "function", "function": _schema}
                 self.tools.append(_wrapped)
-                _tname = _schema.get("name", "")
                 if _tname:
+                    _existing_tool_names.add(_tname)
                     self.valid_tool_names.add(_tname)
 
         # Skills config: nudge interval for skill creation reminders
